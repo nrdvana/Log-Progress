@@ -93,7 +93,7 @@ sub _calc_precision_squelch {
 		$squelch= .01;
 		$precision= 2;
 	} else {
-		# cheap calculation for digit length of number of steps
+		# calculation for digit length of number of steps
 		$precision //= int(log(1/$squelch)/log(10) + .99999);
 		$squelch //= 1/(10**$precision);
 	}
@@ -128,8 +128,8 @@ sub progress {
 }
 
 sub progress_ratio {
-	my ($self, $num, $denom)= @_;
-	$self->progress($num/$denom, "($num/$denom)");
+	my ($self, $num, $denom, $message)= @_;
+	$self->progress($num/$denom, "($num/$denom)".($message? " $message":''));
 }
 
 sub substep {
@@ -139,15 +139,15 @@ sub substep {
 	
 	my $sub_progress= ref($self)->new(
 		to        => $self->to,
-		squelch   => $self->squelch,
-		precision => $self->precision,
+		squelch   => $self->_squelch,
+		precision => $self->_precision,
 		step_id   => $step_id,
 	);
 	
 	if ($step_contribution) {
-		$self->_writer->(sprintf("(%.*f) %s", $self->_precision, $step_contribution, $title));
+		$sub_progress->_writer->(sprintf("(%.*f) %s", $self->precision, $step_contribution, $title));
 	} else {
-		$self->_writer->("- $title");
+		$sub_progress->_writer->("- $title");
 	}
 	
 	return $sub_progress;
