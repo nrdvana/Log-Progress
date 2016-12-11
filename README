@@ -12,20 +12,21 @@ PROTOCOL
 
 The syntax for progress-update messages is:
 
-  "progress:" WS [STEP_ID WS] PERCENTAGE [WS "-"] [WS MESSAGE]
+  "progress:" WS [STEP_ID WS] RATIO [WS "-"] [WS MESSAGE]
 
 the syntax for declaring a new sub-step is:
 
-  "progress:" WS STEP_ID WS ["(" PERCENTAGE ")" | "-"] WS TITLE
+  "progress:" WS STEP_ID WS ["(" RATIO ")" | "-"] WS TITLE
 
 and the syntax for arbitrary progress-related data is:
 
   "progress:" WS [STEP_ID WS] "{" JSON "}"
 
 where WS is one or more whitespace characters, the optional STEP_ID designates
-a sub-step, PERCENTAGE is a number between 0 and 1, MESSAGE and TITLE are plain
-text, and JSON is arbitrary JSON content to be used for special cases or
-extensions. 
+a sub-step, RATIO is either a floating point number between 0 and 1 or a
+fraction (whose numerator and denominator could be floating point numbers),
+MESSAGE and TITLE are plain text, and JSON is arbitrary JSON content to be
+used for special cases or extensions. 
 
 This sequence gives you a basic progress bar:
 
@@ -48,11 +49,11 @@ If you want to divide the progress into multiple sub-steps:
     progress: check   (.2) Checking catalog vs. remote catalog
     progress: xfer    (.5) Transferring data
     progress: commit  (.1) Committing transaction
-    progress: collect 0.1 - 400 of 4000
-    progress: collect 0.2 - 800 of 4000
-    progress: collect 0.2 - 1600 of 8000
-    progress: collect 0.9 - 9000 of 10000
-    progress: collect 1
+    progress: collect 400/4000
+    progress: collect 800/4000
+    progress: collect 1600/8000
+    progress: collect 9000/10000
+    progress: collect 10000/10000
     progress: check   0.1 - 1000 of 10000
     progress: check   0.7 - 7000 of 10000
     progress: check   1

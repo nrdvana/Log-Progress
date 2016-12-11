@@ -61,20 +61,27 @@ Once set, squelch will not receive a default value from changing precision.
 If this object is reporting the progress of a sub-step, set this ID to
 the step name.
 
+The default value for this field comes from C<$ENV{PROGRESS_STEP_ID}>, so that
+programs that perform simple progress reporting can be nested as child
+processes of a larger job without having to specifically plan for that ability
+in the child process.
+
 =cut
 
-has to        => ( is => 'rw', default => sub { \*STDERR }, trigger => sub { delete $_[0]{_writer} } );
-sub squelch   {
+has to         => ( is => 'rw', default => sub { \*STDERR },
+                    trigger => sub { delete $_[0]{_writer} } );
+sub squelch    {
 	my $self= shift;
 	if (@_) { $self->_squelch(shift); $self->_calc_precision_squelch() }
 	$self->{squelch};
 }
-sub precision {
+sub precision  {
 	my $self= shift;
 	if (@_) { $self->_precision(shift); $self->_calc_precision_squelch() }
 	$self->{precision};
 }
-has step_id   => ( is => 'rw', trigger => sub { delete $_[0]{_writer} } );
+has step_id    => ( is => 'rw', default => sub { $ENV{PROGRESS_STEP_ID} },
+                    trigger => sub { delete $_[0]{_writer} } );
 
 has _writer    => ( is => 'lazy' );
 has _squelch   => ( is => 'rw', init_arg => 'squelch' );
@@ -118,18 +125,23 @@ sub progress {
 	my ($self, $progress, $message)= @_;
 	$progress= 1 if $progress > 1;
 	$progress= 0 if $progress < 0;
-	my $w= $self->_writer; # Do this first to refresh cache if needed
 	my $sq= $self->squelch;
 	my $formatted= sprintf("%.*f", $self->precision, int($progress/$sq + .0000000001)*$sq);
 	return if defined $self->_last_progress
 	      and abs($formatted - $self->_last_progress)+.0000000001 < $sq;
 	$self->_last_progress($formatted);
-	$w->($formatted . ($message? " - $message":''));
+	$self->_writer->($formatted . ($message? " - $message":''));
 }
 
 sub progress_ratio {
 	my ($self, $num, $denom, $message)= @_;
-	$self->progress($num/$denom, "($num/$denom)".($message? " $message":''));
+	my $progress= $num/$denom;
+	my $sq= $self->squelch;
+	my $formatted= sprintf("%.*f", $self->precision, int($progress/$sq + .0000000001)*$sq);
+	return if defined $self->_last_progress
+		and abs($formatted - $self->_last_progress)+.0000000001 < $sq;
+	$self->_last_progress($formatted);
+	$self->_writer->("$num/$denom".($message? " - $message":''));
 }
 
 sub substep {
