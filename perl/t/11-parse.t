@@ -49,7 +49,7 @@ is_deeply(
 	'substep progress',
 ) or diag explain $parser->status;
 
-# Now, extend the input and parse more of it
+# Now, extend the input and parse more of it.
 $parser->input($parser->input . " - New Status Message\n");
 $parser->parse;
 is_deeply(

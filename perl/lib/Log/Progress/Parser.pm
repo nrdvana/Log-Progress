@@ -2,6 +2,30 @@ package Log::Progress::Parser;
 use Moo 2;
 use JSON;
 
+=head1 DESCRIPTION
+
+This module parses progress messages from a file handle or string.
+Repeated calls to the L</parse> method will continue parsing the file
+where it left off, making it relatively efficient to repeatedly call
+L</parse> on a live log file.
+
+=head1 SYNOPSIS
+
+  open my $fh, "<", $logfile or die;
+  my $parser= Log::Progress::Parser->new(input => $fh);
+  
+  # Display a 40-character progress bar at 1-second intervals
+  $|= 1;
+  while (1) {
+    $parser->parse;
+    printf "\r%3d%%  [%-40s] ", $parser->status->{progress}*100, "#" x int($parser->status->{progress}*40);
+    last if $parser->status->{progress} >= 1;
+    sleep 1;
+  }
+  print "\n";
+
+=cut
+
 has input     => ( is => 'rw' );
 has input_pos => ( is => 'rw' );
 has status    => ( is => 'rw', default => sub { {} } );
@@ -75,6 +99,7 @@ sub parse {
 			$status->{progress} += $_->{progress} * $_->{contribution};
 		}
 	}
+	return $self->status;
 }
 
 1;

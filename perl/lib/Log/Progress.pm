@@ -1,14 +1,16 @@
 package Log::Progress;
 use Moo 2;
+use Carp;
+use IO::Handle; # for 'autoflush'
 use JSON;
 
 =head1 DESCRIPTION
 
 This module assists with writing the Log::Progress protocol, which can then
-be parsed with the Log::Progress::Parser
+be parsed with the Log::Progress::Parser.  It can write to file handles, log
+objects (like Log::Any), a coderef, or any object with a "print" method.
 
-This module either writes to STDOUT, STDERR, Log::Any, or an anonymous sub
-of your choice.
+Note that this module enables autoflush if you give it a file handle.
 
 =head1 SYNOPSIS
 
@@ -19,6 +21,8 @@ of your choice.
     # do the thing
     ...;
     $p->progress(($i+1)/$max);
+    # -or-
+    $p->progress_ratio($i+1, $max);
   }
 
 =head1 ATTRIBUTES
@@ -114,12 +118,25 @@ sub _build__writer {
 	my $prefix= "progress: ".(defined $self->step_id? $self->step_id.' ' : '');
 	my $to= $self->to;
 	my $type= ref $to;
+	$to->autoflush(1) if $type eq 'GLOB' or $type->can('autoflush');
 	return ($type eq 'GLOB')? sub { print $to $prefix.join('', @_)."\n"; }
 		:  ($type eq 'CODE')? sub { $to->($prefix.join('', @_)); }
 		:  ($type->can('print'))? sub { $to->print($prefix.join('', @_)."\n"); }
 		:  ($type->can('info'))? sub { $to->info($prefix.join('', @_)); }
 		: die "'to' must be a file handle, coderef, or logger object";
 }
+
+=head1 METHODS
+
+=head2 progress
+
+  $p->progress( $ratio );
+  $p->progress( $ratio, $message );
+
+Report progress (but only if the progress since the last output is greater
+than L<squelch>).  Ratio is clamped to the range 0..1.  Message is optional.
+
+=cut
 
 sub progress {
 	my ($self, $progress, $message)= @_;
@@ -133,6 +150,17 @@ sub progress {
 	$self->_writer->($formatted . ($message? " - $message":''));
 }
 
+=head2 progress_ratio
+
+  $p->progress_ratio( $count, $total )
+  $p->progress_ratio( $count, $total, $message )
+
+Report progress as a discrete count of things.  This style gives the consumer
+a little more metadata to work with vs. printing the count in the message, and
+is preferred for the common case where you are iterating a known quantity.
+
+=cut
+
 sub progress_ratio {
 	my ($self, $num, $denom, $message)= @_;
 	my $progress= $num/$denom;
@@ -144,8 +172,36 @@ sub progress_ratio {
 	$self->_writer->("$num/$denom".($message? " - $message":''));
 }
 
+=head2 data
+
+If you want to write any progress-associated data, use this method.
+The data must be a hashref.
+
+=cut
+
+sub data {
+	my ($self, $data)= @_;
+	ref $data eq 'HASH' or die "data must be a hashref";
+	$self->_writer->(JSON->new->encode($data));
+}
+
+=head2 substep
+
+  my $substep_progress= $progress->substep( $id, $contribution, $title );
+
+Create a named sub-step progress object, and declare it on the output.
+
+$id and $title are required.  $contribution is recommended (in order for the
+progress of the sub-step to automatically update the parent) but not required.
+
+Note that the sub-step gets declared on the output stream each time you call
+this method, but it isn't harmful to do so multiple times for the same step.
+
+=cut
+
 sub substep {
 	my ($self, $step_id, $step_contribution, $title)= @_;
+	length $title or die "sub-step title is required";
 	$step_id= $self->step_id . '.' . $step_id
 		if length($self->step_id//'');
 	
