@@ -18,7 +18,7 @@ the syntax for declaring a new sub-step is:
 
   "progress:" WS STEP_ID WS ["(" PERCENTAGE ")" | "-"] WS TITLE
 
-and the syntax for progress-related metadata is:
+and the syntax for arbitrary progress-related data is:
 
   "progress:" WS [STEP_ID WS] "{" JSON "}"
 
