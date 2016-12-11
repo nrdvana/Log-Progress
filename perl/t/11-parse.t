@@ -30,14 +30,16 @@ END
 $parser->parse;
 is_deeply(
 	$parser->status,
-	{ step => {
+	{ progress => .05, step => {
 		foo => {
+			idx => 0,
 			title => "Step 1",
 			contribution => .5,
 			progress => 0, pos => 0, max => 10,
 			message => undef,
 		},
 		bar => {
+			idx => 1,
 			title => "Step 2",
 			contribution => .5,
 			progress => .1, pos => 1, max => 10,

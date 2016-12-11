@@ -21,7 +21,7 @@ sub parse {
 		my ($step_id, $remainder)= ($2, $3);
 		my $status= $self->status;
 		if (defined $step_id) {
-			$status= ($status->{step}{$_} //= {})
+			$status= ($status->{step}{$_} //= { idx => scalar(keys %{$status->{step}}) - 1 })
 				for split /\./, $step_id;
 		}
 		# First, check for progress number followed by optional message
@@ -49,6 +49,17 @@ sub parse {
 			warn "can't parse progress message \"$remainder\"\n";
 		}
 	}
+	$self->status->{progress} //= $self->_progress_from_substeps($self->status);
+}
+
+sub _progress_from_substeps {
+	my ($self, $status)= @_;
+	return unless $status->{step};
+	my $p= 0;
+	for (values %{$status->{step}}) {
+		$p += ($_->{progress} //= $self->_progress_from_substeps($_)) * $_->{contribution};
+	}
+	$p;
 }
 
 1;
