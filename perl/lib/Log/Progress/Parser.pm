@@ -17,7 +17,10 @@ L</parse> on a live log file.
 
   open my $fh, "<", $logfile or die;
   my $parser= Log::Progress::Parser->new(input => $fh);
-  
+  $parser->parse;
+
+A practical application:
+
   # Display a 40-character progress bar at 1-second intervals
   $|= 1;
   while (1) {
@@ -170,8 +173,7 @@ sub parse {
 
 Convenience method to traverse L</status> to get the data for a step.
 If the second paramter is false, this returns undef if the step is not yet
-defined.  Else it creates a new empty status node (which should get its
-C<title> set, at a minimum)
+defined.  Else it creates a new status node, with C<idx> initialized.
 
 =cut
 
