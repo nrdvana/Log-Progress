@@ -4,6 +4,8 @@ use JSON;
 
 # ABSTRACT: Parse progress data from a file
 
+our $VERSION= '0.00_01';
+
 =head1 DESCRIPTION
 
 This module parses progress messages from a file handle or string.
@@ -154,7 +156,8 @@ sub parse {
 		my $status= $_->[1];
 		$status->{progress}= 0;
 		for (values %{$status->{step}}) {
-			$status->{progress} += $_->{progress} * $_->{contribution};
+			$status->{progress} += $_->{progress} * $_->{contribution}
+				if $_->{progress} && $_->{contribution};
 		}
 	}
 	return $self->status;
