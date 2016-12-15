@@ -19,8 +19,8 @@ my ($writer_a_pid, $writer_b_pid);
 	if (!$writer_a_pid) {
 		my $p= Log::Progress->new(to => $fh);
 		for (my $i= 0; $i < 789; $i++) {
-			sleep .003;
-			$p->progress_ratio($i+1, 789);
+			sleep .001;
+			$p->progress($i+1, 789);
 		}
 		exit 0;
 	}
@@ -32,8 +32,8 @@ my ($writer_a_pid, $writer_b_pid);
 	if (!$writer_b_pid) {
 		my $p= Log::Progress->new(to => $fh);
 		for (my $i= 0; $i < 67; $i++) {
-			sleep .05;
-			$p->progress(($i+1)/67, "$i of 67");
+			sleep .018;
+			$p->progress(($i+1)/67, undef, "$i of 67");
 		}
 		exit 0;
 	}
@@ -52,7 +52,7 @@ while (($parser->parse->{progress}||0) < 1) {
 	note sprintf(" %3d%% %3d%%, parent waiting",
 		($parser->status->{step}{a}{progress}||0)*100,
 		($parser->status->{step}{b}{progress}||0)*100);
-	sleep 1;
+	sleep .3;
 }
 waitpid $writer_a_pid, 0 or die "waitpid: $!";
 waitpid $writer_b_pid, 0 or die "waitpid: $!";

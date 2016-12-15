@@ -4,6 +4,8 @@ use Carp;
 use IO::Handle; # for 'autoflush'
 use JSON;
 
+our $VERSION= '0.00_01';
+
 # ABSTRACT: Conveniently write progress messages to logger or file handle
 
 =head1 DESCRIPTION
@@ -32,7 +34,32 @@ Note that this module enables autoflush if you give it a file handle.
 =head2 to
 
 The destination for progress messages.  \*STDERR is the default.
-You can pass any file handle, coderef, or object with a 'info' method.
+You can pass any file handle or handle-like object with a C<print> method,
+Logger object with C<info> method, or a custom coderef.
+
+=over
+
+=item File Handle (or object with C<print> method)
+
+The C<print> method is used, and passed a single newline-terminated string.
+
+If the object also has a method C<autoflush>, this module calls it
+before writing any messages.  (to avoid that behavior, use a coderef instead)
+
+=item Logger object (with C<info> method)
+
+The progress messages are passed to the C<info> method, without a terminating
+newline.
+
+=item coderef
+
+The progress messages are passed as the only argument, without a terminating
+newline.  The return value becomes the return value of the call to L</progress>
+and should probably be a boolean to match behavior of C<<$handle->print>>.
+
+  sub { my ($progress_message)= @_; ... }
+
+=back
 
 =head2 precision
 
@@ -47,7 +74,7 @@ default squelch of .00001, or a default squelch of 350 results in a precision
 of 3.
 
 Once set, precision will not receive a default value from changes to squelch.
-(but you can un-define it)
+(but you can un-define it to restore that behavior)
 
 =head2 squelch
 
@@ -60,7 +87,7 @@ If you set squelch but not precision, the second will use a sensible default.
 See example in L</precision>
 
 Once set, squelch will not receive a default value from changing precision.
-(but you can un-define it)
+(but you can un-define it to restore that behavior)
 
 =head2 step_id
 
@@ -132,46 +159,33 @@ sub _build__writer {
 
 =head2 progress
 
-  $p->progress( $ratio );
-  $p->progress( $ratio, $message );
+  $p->progress( $current, $maximum );
+  $p->progress( $current, $maximum, $message );
 
 Report progress (but only if the progress since the last output is greater
-than L<squelch>).  Ratio is clamped to the range 0..1.  Message is optional.
+than L<squelch>).  Message is optional.
+
+If C<$maximum> is undefined or exactly '1', then this will print C<$current>
+as a formatted decimal.  Otherwise it prints the fraction of C<$current>/C<$maximum>.
+When using fractional form, the decimal precision is omitted if C<$current> is
+a whole number.
 
 =cut
 
 sub progress {
-	my ($self, $progress, $message)= @_;
-	$progress= 1 if $progress > 1;
-	$progress= 0 if $progress < 0;
+	my ($self, $current, $maximum, $message)= @_;
+	$maximum= 1 unless defined $maximum;
+	my $progress= $current / $maximum;
 	my $sq= $self->squelch;
 	my $formatted= sprintf("%.*f", $self->precision, int($progress/$sq + .0000000001)*$sq);
 	return if defined $self->_last_progress
 	      and abs($formatted - $self->_last_progress)+.0000000001 < $sq;
 	$self->_last_progress($formatted);
+	if ($maximum != 1) {
+		$formatted= (int($current) == $current)? "$current/$maximum"
+			: sprintf("%.*f/%d", $self->precision, $current, $maximum);
+	}
 	$self->_writer->($formatted . ($message? " - $message":''));
-}
-
-=head2 progress_ratio
-
-  $p->progress_ratio( $count, $total )
-  $p->progress_ratio( $count, $total, $message )
-
-Report progress as a discrete count of things.  This style gives the consumer
-a little more metadata to work with vs. printing the count in the message, and
-is preferred for the common case where you are iterating a known quantity.
-
-=cut
-
-sub progress_ratio {
-	my ($self, $num, $denom, $message)= @_;
-	my $progress= $num/$denom;
-	my $sq= $self->squelch;
-	my $formatted= sprintf("%.*f", $self->precision, int($progress/$sq + .0000000001)*$sq);
-	return if defined $self->_last_progress
-		and abs($formatted - $self->_last_progress)+.0000000001 < $sq;
-	$self->_last_progress($formatted);
-	$self->_writer->("$num/$denom".($message? " - $message":''));
 }
 
 =head2 data
@@ -189,12 +203,13 @@ sub data {
 
 =head2 substep
 
-  my $substep_progress= $progress->substep( $id, $contribution, $title );
+  $progress_obj= $progress->substep( $id, $contribution, $title );
 
 Create a named sub-step progress object, and declare it on the output.
 
-$id and $title are required.  $contribution is recommended (in order for the
-progress of the sub-step to automatically update the parent) but not required.
+C<$id> and C<$title> are required.  The C<$contribution> rate (a multiplier
+for applying the sub-step's progress to the parent progress bar) is
+recommended but not required.
 
 Note that the sub-step gets declared on the output stream each time you call
 this method, but it isn't harmful to do so multiple times for the same step.
