@@ -6,7 +6,7 @@ use Test::More;
 use_ok( 'Log::Progress' ) or BAIL_OUT;
 
 my $out= '';
-sub append_out { $out .= shift . "\n" }
+sub append_out { $out .= (shift) . "\n" }
 
 my $p= Log::Progress->new(squelch => .2, to => \&append_out);
 my $p1= $p->substep("foo", .3, "Substep 1");

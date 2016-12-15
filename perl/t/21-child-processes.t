@@ -3,6 +3,7 @@ use strict;
 use warnings;
 use Test::More;
 use File::Temp;
+use IO::File;
 use Time::HiRes 'sleep';
 
 use_ok 'Log::Progress::Parser'

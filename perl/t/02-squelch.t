@@ -6,7 +6,7 @@ use Test::More;
 use_ok( 'Log::Progress' ) or BAIL_OUT;
 
 my $out= '';
-sub append_out { $out.= shift."\n"; }
+sub append_out { $out.= (shift) . "\n"; }
 
 for (
 	[ 1 => 0 ],

@@ -1,12 +1,12 @@
 #! /usr/bin/env perl
 use strict;
 use warnings;
-use Test::More;
+use Test::More 0.96;
 
 use_ok 'Log::Progress' or BAIL_OUT;
 
 my $out= '';
-my $p= Log::Progress->new(to => sub { $out .= shift . "\n" });
+my $p= Log::Progress->new(to => sub { $out .= (shift) . "\n" });
 $p->progress(0);
 
 is( $out, "progress: 0.00\n", 'log via coderef' );
@@ -28,7 +28,8 @@ $p->progress(0);
 is( $out, "progress: 0.00\n", "log via filehandle" );
 
 $out= '';
-package TestLogger {
+{
+package TestLogger;
 	sub new { bless {}, shift }
 	sub info { $out .= $_[1]."\n" }
 };
