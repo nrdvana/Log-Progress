@@ -16,7 +16,7 @@ END
 $parser->parse;
 is_deeply(
 	$parser->status,
-	{ message => undef, progress => 0.1 },
+	{ message => '', progress => 0.1 },
 	'simple progress'
 ) or diag explain $parser->status;
 
@@ -36,7 +36,7 @@ is_deeply(
 			title => "Step 1",
 			contribution => .5,
 			progress => 0, pos => 0, max => 10,
-			message => undef,
+			message => '',
 		},
 		bar => {
 			idx => 1,
@@ -60,7 +60,7 @@ is_deeply(
 			title => "Step 1",
 			contribution => .5,
 			progress => 0, pos => 0, max => 10,
-			message => undef,
+			message => '',
 		},
 		bar => {
 			idx => 1,

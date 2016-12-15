@@ -4,6 +4,8 @@ use Carp;
 use IO::Handle; # for 'autoflush'
 use JSON;
 
+# ABSTRACT: Conveniently write progress messages to logger or file handle
+
 =head1 DESCRIPTION
 
 This module assists with writing the Log::Progress protocol, which can then
