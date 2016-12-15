@@ -4,7 +4,7 @@ use Carp;
 use IO::Handle; # for 'autoflush'
 use JSON;
 
-our $VERSION= '0.00_01';
+our $VERSION= '0.00_02';
 
 # ABSTRACT: Conveniently write progress messages to logger or file handle
 
