@@ -15,7 +15,7 @@ my ($writer_a_pid, $writer_b_pid);
 {
 	Log::Progress->new(to => $fh)->substep('a', .5, 'Task A');
 	local $ENV{PROGRESS_STEP_ID}= 'a';
-	$writer_a_pid= fork // die "fork: $!";
+	defined($writer_a_pid= fork) or die "fork: $!";
 	if (!$writer_a_pid) {
 		my $p= Log::Progress->new(to => $fh);
 		for (my $i= 0; $i < 789; $i++) {
@@ -28,7 +28,7 @@ my ($writer_a_pid, $writer_b_pid);
 {
 	Log::Progress->new(to => $fh)->substep('b', .5, 'Task B');
 	$ENV{PROGRESS_STEP_ID}= 'b';
-	$writer_b_pid= fork // die "fork: $!";
+	defined ($writer_b_pid= fork) or die "fork: $!";
 	if (!$writer_b_pid) {
 		my $p= Log::Progress->new(to => $fh);
 		for (my $i= 0; $i < 67; $i++) {
@@ -42,7 +42,7 @@ my ($writer_a_pid, $writer_b_pid);
 my $in_fh= IO::File->new("$fh", "<");
 my $parser= Log::Progress::Parser->new(input => $in_fh);
 my $w= 0;
-while (($parser->parse->{progress}//0) < 1) {
+while (($parser->parse->{progress}||0) < 1) {
 	if (++$w > 6) {
 		warn "Progress did not reach 100% within timeout. tmpfile= $fh";
 		$fh->unlink_on_destroy(0);
@@ -50,8 +50,8 @@ while (($parser->parse->{progress}//0) < 1) {
 		last;
 	};
 	note sprintf(" %3d%% %3d%%, parent waiting",
-		($parser->status->{step}{a}{progress}//0)*100,
-		($parser->status->{step}{b}{progress}//0)*100);
+		($parser->status->{step}{a}{progress}||0)*100,
+		($parser->status->{step}{b}{progress}||0)*100);
 	sleep 1;
 }
 waitpid $writer_a_pid, 0 or die "waitpid: $!";

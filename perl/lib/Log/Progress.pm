@@ -107,8 +107,8 @@ sub _calc_precision_squelch {
 		$precision= 2;
 	} else {
 		# calculation for digit length of number of steps
-		$precision //= int(log(1/$squelch)/log(10) + .99999);
-		$squelch //= 1/(10**$precision);
+		defined $precision or $precision= int(log(1/$squelch)/log(10) + .99999);
+		defined $squelch or $squelch= 1/(10**$precision);
 	}
 	$self->{squelch}= $squelch;
 	$self->{precision}= $precision;
@@ -204,8 +204,9 @@ this method, but it isn't harmful to do so multiple times for the same step.
 sub substep {
 	my ($self, $step_id, $step_contribution, $title)= @_;
 	length $title or die "sub-step title is required";
+	
 	$step_id= $self->step_id . '.' . $step_id
-		if length($self->step_id//'');
+		if defined $self->step_id and length $self->step_id;
 	
 	my $sub_progress= ref($self)->new(
 		to        => $self->to,
