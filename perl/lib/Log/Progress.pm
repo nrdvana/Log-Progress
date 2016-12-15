@@ -101,7 +101,7 @@ in the child process.
 
 =cut
 
-has to         => ( is => 'rw', default => sub { \*STDERR },
+has to         => ( is => 'rw', isa => \&_assert_valid_output, default => sub { \*STDERR },
                     trigger => sub { delete $_[0]{_writer} } );
 sub squelch    {
 	my $self= shift;
@@ -141,6 +141,17 @@ sub _calc_precision_squelch {
 	$self->{precision}= $precision;
 }
 
+sub _assert_valid_output {
+	my $to= shift;
+	my $type= ref $to;
+	$type && (
+		$type eq 'GLOB'
+		or $type eq 'CODE'
+		or $type->can('print')
+		or $type->can('info')
+	) or die "$to is not a file handle, logger object, or code reference";
+}
+
 sub _build__writer {
 	my $self= shift;
 	
@@ -152,7 +163,7 @@ sub _build__writer {
 		:  ($type eq 'CODE')? sub { $to->($prefix.join('', @_)); }
 		:  ($type->can('print'))? sub { $to->print($prefix.join('', @_)."\n"); }
 		:  ($type->can('info'))? sub { $to->info($prefix.join('', @_)); }
-		: die "'to' must be a file handle, coderef, or logger object";
+		: die "unhandled case";
 }
 
 =head1 METHODS
@@ -197,7 +208,7 @@ The data must be a hashref.
 
 sub data {
 	my ($self, $data)= @_;
-	ref $data eq 'HASH' or die "data must be a hashref";
+	ref $data eq 'HASH' or croak "data must be a hashref";
 	$self->_writer->(JSON->new->encode($data));
 }
 
@@ -218,7 +229,7 @@ this method, but it isn't harmful to do so multiple times for the same step.
 
 sub substep {
 	my ($self, $step_id, $step_contribution, $title)= @_;
-	length $title or die "sub-step title is required";
+	length $title or croak "sub-step title is required";
 	
 	$step_id= $self->step_id . '.' . $step_id
 		if defined $self->step_id and length $self->step_id;
