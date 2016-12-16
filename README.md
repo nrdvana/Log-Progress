@@ -12,21 +12,22 @@ PROTOCOL
 
 The syntax for progress-update messages is:
 
-  "progress:" WS [STEP_ID WS] RATIO [WS "-"] [WS MESSAGE]
+  "progress:" WS [STEP_ID WS] FRACTION [WS "-"] [WS MESSAGE]
 
 the syntax for declaring a new sub-step is:
 
-  "progress:" WS STEP_ID WS ["(" RATIO ")" | "-"] WS TITLE
+  "progress:" WS STEP_ID WS ["(" CONTRIBUTION ")" | "-"] WS TITLE
 
 and the syntax for arbitrary progress-related data is:
 
   "progress:" WS [STEP_ID WS] "{" JSON "}"
 
 where WS is one or more whitespace characters, the optional STEP_ID designates
-a sub-step, RATIO is either a floating point number between 0 and 1 or a
+a sub-step, FRACTION is either a floating point number between 0 and 1 or a
 fraction (whose numerator and denominator could be floating point numbers),
-MESSAGE and TITLE are plain text, and JSON is arbitrary JSON content to be
-used for special cases or extensions. 
+CONTRIBUTION is a floating point number between 0 and 1 indicating how step
+progress affects the parent progress, MESSAGE and TITLE are plain text, and
+JSON is arbitrary JSON content to be used for special cases or extensions. 
 
 This sequence gives you a basic progress bar:
 

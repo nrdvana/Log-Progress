@@ -8,6 +8,9 @@ our $VERSION= '0.01';
 
 =head1 DESCRIPTION
 
+(See L<the protocol description|http://github.com/nrdvana/Log-Progress>
+ for an overview of what data this module is parsing)
+
 This module parses progress messages from a file handle or string.
 Repeated calls to the L</parse> method will continue parsing the file
 where it left off, making it relatively efficient to repeatedly call
@@ -42,7 +45,8 @@ you want to read progress messages that are more than just ascii.
 =head2 input_pos
 
 Each call to parse makes a note of the start of the final un-finished line, so
-that the next call can pick up where it left off, assuming the file is growing.
+that the next call can pick up where it left off, assuming the file is growing
+and the file handle is seekable.
 
 =head2 status
 
@@ -103,7 +107,7 @@ sub parse {
 	if (!ref $fh) {
 		my $input= $fh;
 		undef $fh;
-		open $fh, '<', \$input or die;
+		open $fh, '<', \$input or die "open(scalar): $!";
 	}
 	if ($self->input_pos) {
 		seek($fh, $self->input_pos, 0)

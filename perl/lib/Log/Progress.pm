@@ -10,9 +10,11 @@ our $VERSION= '0.01';
 
 =head1 DESCRIPTION
 
-This module assists with writing the Log::Progress protocol, which can then
-be parsed with the Log::Progress::Parser.  It can write to file handles, log
-objects (like Log::Any), a coderef, or any object with a "print" method.
+This module assists with writing
+L<the Log::Progress protocol|http://github.com/nrdvana/Log-Progress>,
+which can then be parsed with L<Log::Progress::Parser>.
+It can write to file handles, log objects (like L<Log::Any>),
+or custom coderefs.
 
 Note that this module enables autoflush if you give it a file handle.
 
@@ -21,12 +23,10 @@ Note that this module enables autoflush if you give it a file handle.
   my $p= Log::Progress->new(to => \*STDERR); # The default
   $p->squelch(.1); # only emit messages every 10%
   my $max= 1000;
-  for (my $i= 0; $i < $max; $i++) {
+  for (my $i= 1; $i <= $max; $i++) {
     # do the thing
     ...;
-    $p->progress(($i+1)/$max);
-    # -or-
-    $p->progress_ratio($i+1, $max);
+    $p->progress($i, $max);
   }
 
 =head1 ATTRIBUTES
@@ -55,7 +55,7 @@ newline.
 
 The progress messages are passed as the only argument, without a terminating
 newline.  The return value becomes the return value of the call to L</progress>
-and should probably be a boolean to match behavior of C<<$handle->print>>.
+and should probably be a boolean to match behavior of C<< $handle->print >>.
 
   sub { my ($progress_message)= @_; ... }
 
@@ -65,8 +65,8 @@ and should probably be a boolean to match behavior of C<<$handle->print>>.
 
 The progress number is written as text, with L</precision> digits after the
 decimal point.  The default precision is 2.  This default corresponds with a
-default L</squelch> of 0.01, so that calls to ->progress with less than 1%
-change from the previous call are suppressed.
+default L</squelch> of 0.01, so that calls to C<< ->progress >> with less
+than 1% change from the previous call are suppressed.
 
 If you set precision but not squelch, the second will use a default to match
 the one you specified.  For example, setting a precision of 5 results in a
@@ -202,14 +202,14 @@ sub progress {
 =head2 data
 
 If you want to write any progress-associated data, use this method.
-The data must be a hashref.
+The data must be a hashref.  It gets encoded as pure-ascii JSON.
 
 =cut
 
 sub data {
 	my ($self, $data)= @_;
 	ref $data eq 'HASH' or croak "data must be a hashref";
-	$self->_writer->(JSON->new->encode($data));
+	$self->_writer->(JSON->new->ascii->encode($data));
 }
 
 =head2 substep
