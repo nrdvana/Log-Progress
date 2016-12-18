@@ -11,8 +11,8 @@ our $VERSION= '0.01';
 =head1 DESCRIPTION
 
 This module assists with writing
-L<the Log::Progress protocol|http://github.com/nrdvana/Log-Progress>,
-which can then be parsed with L<Log::Progress::Parser>.
+L<Log::Progress protocol|http://github.com/nrdvana/Log-Progress/blob/master/README.md>
+messages to your log file, which can then be parsed with L<Log::Progress::Parser>.
 It can write to file handles, log objects (like L<Log::Any>),
 or custom coderefs.
 
@@ -33,9 +33,7 @@ Note that this module enables autoflush if you give it a file handle.
 
 =head2 to
 
-The destination for progress messages.  \*STDERR is the default.
-You can pass any file handle or handle-like object with a C<print> method,
-Logger object with C<info> method, or a custom coderef.
+The destination for progress messages.  It can be one of:
 
 =over
 
@@ -55,7 +53,7 @@ newline.
 
 The progress messages are passed as the only argument, without a terminating
 newline.  The return value becomes the return value of the call to L</progress>
-and should probably be a boolean to match behavior of C<< $handle->print >>.
+and should probably be a boolean to match behavior of C<IO::Handle::print>.
 
   sub { my ($progress_message)= @_; ... }
 

@@ -8,10 +8,9 @@ our $VERSION= '0.01';
 
 =head1 DESCRIPTION
 
-(See L<the protocol description|http://github.com/nrdvana/Log-Progress>
- for an overview of what data this module is parsing)
-
-This module parses progress messages from a file handle or string.
+This module parses progress messages (See
+L<the protocol description|http://github.com/nrdvana/Log-Progress/blob/master/README.md>
+for details) from a file handle or string.
 Repeated calls to the L</parse> method will continue parsing the file
 where it left off, making it relatively efficient to repeatedly call
 L</parse> on a live log file.
@@ -179,15 +178,17 @@ Convenience method to traverse L</status> to get the data for a step.
 If the second paramter is false, this returns undef if the step is not yet
 defined.  Else it creates a new status node, with C<idx> initialized.
 
+If you pass the third parameter C<@path_out> it will receive a list of the
+parent nodes of the returned status node.
+
 =cut
 
 sub step_status {
 	my ($self, $step_id, $create, $path)= @_;
 	my $status= $self->status;
-	my @status_parent;
 	if (defined $step_id and length $step_id) {
 		for (split /\./, $step_id) {
-			push @status_parent, $status;
+			push @$path, $status if $path;
 			$status= ($status->{step}{$_} or do {
 				return undef unless $create;
 				my $idx= scalar(keys %{$status->{step}});
@@ -195,7 +196,6 @@ sub step_status {
 			});
 		}
 	}
-	@$path= @status_parent if defined $path;
 	$status;
 }
 

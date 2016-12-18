@@ -6,6 +6,61 @@ use Log::Progress::Parser;
 use Term::Cap;
 use Scalar::Util;
 
+# ABSTRACT: Render progress state on a terminal
+
+=head1 SYNOPSIS
+
+  use Log::Progress::Parser;
+  use Log::Progress::RenderTTY;
+  my $p= Log::Progress::Parser->new( ... );
+  my $r= Log::Progress::RenderTTY->new( parser => $p );
+  while (sleep .5) {
+    $r->render;  # calls $p->parse and renders result
+  }
+
+=head1 DESCRIPTION
+
+This module takes the state data parsed by L<Log::Progress::Parser> and
+renders it to a terminal as a progress bar, or multiple progress bars if
+sub-steps are found.
+
+Your terminal must be supported by L<Term::Cap>, and you must have a C<stty>
+command on your system for the progress bar to display correctly.
+
+=head1 ATTRIBUTES
+
+=head2 parser
+
+Reference to a L<Log::Progress::Parser>, whose L<Log::Progress::Parser/status> should
+be rendered.
+
+=head2 tty_metrics
+
+Stores the dimensions and baud rate of the current terminal.  It fetched this
+information by shelling out to C<stty -a>, which should work on most unix flavors.
+
+=head2 termcap
+
+Reference to a L<Term::Cap> object that is used for generating TTY escape sequences.
+
+=head2 listen_resize
+
+The way to listen to screen resizes on Linux is to trap SIGWINCH and re-load
+the terminal dimensions.  The problem is that you can only have one C<$SIG{WINCH}>,
+so things get messy when multiple objects try to watch for changes.
+
+If you want this instance of RenderTTY to set a signal handler for SIGWINCH,
+set this attribute to a true value I<during the constrctor>.  It is read-only
+after the object is created.
+
+Otherwise, you can set up the signal handler yourself, using whatever framework you
+happen to be using:
+
+  use AnyEvent;
+  my $sig= AE::signal WINCH => sub { $renderer->clear_tty_metrics; };
+
+=cut
+
 has listen_resize  => ( is => 'ro' );
 has tty_metrics    => ( is => 'lazy', clearer => 1 );
 has termcap        => ( is => 'lazy' );
@@ -46,6 +101,21 @@ sub _init_window_change_watch {
 	};
 }
 
+=head1 METHODS
+
+=head2 format
+
+  $text= $renderer->format( \%state, \%dimensions );
+
+Format progress state (from L<Log::Progress::Parser>) as plain multi-line text.
+The dimensions are used to size the text to the viewport, and also store additional
+derived measurements.
+
+Returns a plain-text string.  The lines of text are then re-parsed by the L</render>
+method to apply the necessary terminal cursor escapes.
+
+=cut
+
 sub format {
 	my ($self, $state, $dims)= @_;
 	
@@ -66,6 +136,23 @@ sub format {
 	$str .= $self->_format_main_progress_line($state, $dims);
 	return $str;
 }
+
+=head2 render
+
+  $renderer->render
+
+Call C<< ->parser->parse >>, format the parser's status as text, then print
+terminal escape sequences to display the text with minimal overwriting.
+
+This method goes to some additional effort to make sure the scrollback buffer
+stays readable in the case where your sub-steps exceed the rows of the
+terminal window.
+
+Note that this method can trigger various terminal-related exceptions since
+it might be the first thing that lazy-initializes the L</tty_metrics>
+or L</termcap> attributes.
+
+=cut
 
 sub render {
 	my $self= shift;
