@@ -55,8 +55,8 @@ This is a hashref of data describing the progress found in the input.
   {
     progress => $number_between_0_and_1,
     message  => $current_progress_messsage,  # empty string if no message
-    pos      => $numerator,   # only present if progress was a fraction
-    max      => $denominator, #
+    current  => $numerator,   # only present if progress was a fraction
+    total    => $denominator, #
     step     => \%sub_steps_by_id,
     data     => \%data,       # most recent JSON data payload, decoded
   }
@@ -131,8 +131,8 @@ sub parse {
 			$status->{message}= $message;
 			$status->{progress}= $num+0;
 			if (defined $denom) {
-				$status->{pos}= $num;
-				$status->{max}= $denom;
+				$status->{current}= $num;
+				$status->{total}= $denom;
 				$status->{progress} /= $denom;
 			}
 			if ($status->{contribution}) {
