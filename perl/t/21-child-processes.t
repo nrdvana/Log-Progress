@@ -19,9 +19,9 @@ my ($writer_a_pid, $writer_b_pid);
 	defined($writer_a_pid= fork) or die "fork: $!";
 	if (!$writer_a_pid) {
 		my $p= Log::Progress->new(to => $fh);
-		for (my $i= 0; $i < 789; $i++) {
-			sleep .001;
-			$p->progress($i+1, 789);
+		for (my $i= 1; $i <= 123; $i++) {
+			sleep .01;
+			$p->progress($i, 123);
 		}
 		exit 0;
 	}
@@ -32,9 +32,9 @@ my ($writer_a_pid, $writer_b_pid);
 	defined ($writer_b_pid= fork) or die "fork: $!";
 	if (!$writer_b_pid) {
 		my $p= Log::Progress->new(to => $fh);
-		for (my $i= 0; $i < 67; $i++) {
-			sleep .018;
-			$p->progress(($i+1)/67, undef, "$i of 67");
+		for (my $i= 1; $i <= 12; $i++) {
+			sleep .18;
+			$p->progress($i/12, undef, "$i of 12");
 		}
 		exit 0;
 	}
@@ -44,7 +44,7 @@ my $in_fh= IO::File->new("$fh", "<");
 my $parser= Log::Progress::Parser->new(input => $in_fh);
 my $w= 0;
 while (($parser->parse->{progress}||0) < 1) {
-	if (++$w > 6) {
+	if (++$w > 10) {
 		warn "Progress did not reach 100% within timeout. tmpfile= $fh";
 		$fh->unlink_on_destroy(0);
 		kill TERM => $writer_a_pid, $writer_b_pid;
