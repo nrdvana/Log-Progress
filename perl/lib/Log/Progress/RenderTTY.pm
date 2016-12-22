@@ -9,6 +9,8 @@ use Scalar::Util;
 
 # ABSTRACT: Render progress state on a terminal
 
+our $VERSION= '0.02';
+
 =head1 SYNOPSIS
 
   use Log::Progress::Parser;
@@ -222,7 +224,7 @@ sub _format_main_progress_line {
 		if defined $state->{total} and defined $state->{current};
 	
 	my $max_chars= $dims->{cols} - 8;
-	return sprintf "[%-*s] %3d%%\n",
+	return sprintf "[%-*s] %3d%%\n  %.*s",
 		$max_chars, '=' x int( ($state->{progress}||0) * $max_chars + .000001 ),
 		int( ($state->{progress}||0) * 100 + .0000001 ),
 		$dims->{cols}, $message;
