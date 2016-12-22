@@ -180,10 +180,8 @@ sub render {
 	my $cursor_seek= sub {
 		my $dest_row= shift;
 		if ($cursor_row > $dest_row) {
-			print STDERR "up ".($cursor_row - $dest_row)."\n";
 			$str .= $up x ($cursor_row - $dest_row);
 		} elsif ($dest_row > $cursor_row) {
-			print STDERR "down ".($dest_row - $cursor_row)."\n";
 			$str .= $down x ($dest_row - $cursor_row);
 		}
 		$cursor_row= $dest_row;
@@ -194,7 +192,6 @@ sub render {
 			# Seek to row
 			$cursor_seek->($i - $first_vis_line + $starting_row);
 			# clear line and replace
-			print STDERR "print line $i: $next[$i]\n";
 			$str .= $clear_eol . $next[$i] . "\n";
 			$cursor_row++;
 		}
@@ -202,7 +199,6 @@ sub render {
 	$cursor_seek->($rows-1);
 	# Now, print any new rows in @next, letting them scroll the screen as needed
 	while ($i < @next) {
-		print STDERR "print line $i, (wrap bottom): $next[$i]\n";
 		$str .= $next[$i++] . "\n";
 	}
 	$self->_prev_output($output);
