@@ -2,6 +2,7 @@ package Log::Progress::RenderTTY;
 use Moo 2;
 use Carp;
 use Try::Tiny;
+use IO::Handle;
 use Log::Progress::Parser;
 use Term::Cap;
 use Scalar::Util;
@@ -59,12 +60,17 @@ happen to be using:
   use AnyEvent;
   my $sig= AE::signal WINCH => sub { $renderer->clear_tty_metrics; };
 
+=head2 out
+
+File handle on which the progress bar will be rendered.
+
 =cut
 
 has listen_resize  => ( is => 'ro' );
 has tty_metrics    => ( is => 'lazy', clearer => 1 );
 has termcap        => ( is => 'lazy' );
 has parser         => ( is => 'rw' );
+has out            => ( is => 'rw' );
 has _prev_output   => ( is => 'rw' );
 has _winch_handler => ( is => 'rw' );
 
@@ -203,7 +209,7 @@ sub render {
 	}
 	$self->_prev_output($output);
 	
-	print $str;
+	($self->out || \*STDOUT)->print($str);
 }
 
 sub _format_main_progress_line {
