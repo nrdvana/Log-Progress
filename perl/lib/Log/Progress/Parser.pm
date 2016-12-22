@@ -116,6 +116,7 @@ sub parse {
 	#  Substeps will make that rather complicated.
 	my $pos;
 	my %parent_cleanup;
+	local $_;
 	while (<$fh>) {
 		last unless substr($_,-1) eq "\n";
 		$pos= tell($fh);
