@@ -76,12 +76,12 @@ has _winch_handler => ( is => 'rw' );
 
 sub _build_tty_metrics {
 	my $self= shift;
-	my $stty= `stty -a` or croak("unable to run 'stty -a' to fetch terminal size");
+	my $stty= `stty -a` or warn "unable to run 'stty -a' to fetch terminal size\n";
 	my ($speed)= ($stty =~ /speed[ =]+(\d+)/);
 	my ($cols)=  ($stty =~ /columns[ =]+(\d+)/);
 	my ($rows)=  ($stty =~ /rows[ =]+(\d+)/);
-	$self->_init_window_change_watch() if $self->listen_resize;
-	return { speed => $speed, cols => $cols, rows => $rows };
+	$self->_init_window_change_watch() if $self->listen_resize and $cols;
+	return { speed => $speed || 9600, cols => $cols || 80, rows => $rows || 25 };
 }
 
 sub _build_termcap {
@@ -92,6 +92,7 @@ sub _build_termcap {
 
 sub _init_window_change_watch {
 	my $self= shift;
+	return if defined $self->_winch_handler;
 	try {
 		my $existing= $SIG{WINCH};
 		Scalar::Util::weaken($self);
