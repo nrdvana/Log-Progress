@@ -1,2 +1,9 @@
+Version 0.02
+  Add RenderTTY module to display progress on a terminal.
+  Fixed a bug in Parser that clobbered $_.
+  Renamed a few attributes in Parser.  Not backward compatible,
+    but I doubt anyone has found this module on CPAN yet.
+  Some doc improvements.
+
 Version 0.01
   Initial version

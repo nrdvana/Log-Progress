@@ -4,7 +4,7 @@ use JSON;
 
 # ABSTRACT: Parse progress data from a file
 
-our $VERSION= '0.01';
+our $VERSION= '0.02';
 
 =head1 DESCRIPTION
 
