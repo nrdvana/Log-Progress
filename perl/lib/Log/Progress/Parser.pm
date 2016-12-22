@@ -27,8 +27,8 @@ A practical application:
   $|= 1;
   while (1) {
     $parser->parse;
-    printf "\r%3d%%  [%-40s] ", $parser->status->{progress}*100, "#" x int($parser->status->{progress}*40);
-    last if $parser->status->{progress} >= 1;
+    printf "\r%3d%%  [%-40s] ", $parser->state->{progress}*100, "#" x int($parser->state->{progress}*40);
+    last if $parser->state->{progress} >= 1;
     sleep 1;
   }
   print "\n";
@@ -47,7 +47,7 @@ Each call to parse makes a note of the start of the final un-finished line, so
 that the next call can pick up where it left off, assuming the file is growing
 and the file handle is seekable.
 
-=head2 status
+=head2 state
 
 This is a hashref of data describing the progress found in the input.
 
@@ -56,7 +56,7 @@ This is a hashref of data describing the progress found in the input.
     message  => $current_progress_messsage,  # empty string if no message
     current  => $numerator,   # only present if progress was a fraction
     total    => $denominator, #
-    step     => \%sub_steps_by_id,
+    step     => { $step_id => \%step_state, ... },
     data     => \%data,       # most recent JSON data payload, decoded
   }
 
@@ -76,7 +76,7 @@ For example, you might want to combine all the data instead of overwriting it:
   my $parser= Log::Progress::Parser->new(
     on_data => sub {
       my ($parser, $step_id, $data)= @_;
-      return Hash::Merge::merge( $parser->step_status($step_id), $data );
+      return Hash::Merge::merge( $parser->step_state($step_id), $data );
     }
   );
 
@@ -84,7 +84,7 @@ For example, you might want to combine all the data instead of overwriting it:
 
 has input     => ( is => 'rw' );
 has input_pos => ( is => 'rw' );
-has status    => ( is => 'rw', default => sub { {} } );
+has state     => ( is => 'rw', default => sub { {} } );
 has on_data   => ( is => 'rw' );
 
 =head1 METHODS
@@ -122,34 +122,34 @@ sub parse {
 		$pos= tell($fh);
 		next unless $_ =~ /^progress: (([[:alpha:]][\w.]*) )?(.*)/;
 		my ($step_id, $remainder)= ($2, $3);
-		my $status= $self->step_status($step_id, 1, \my @status_parent);
+		my $state= $self->step_state($step_id, 1, \my @state_parent);
 		# First, check for progress number followed by optional message
 		if ($remainder =~ m,^([\d.]+)(/(\d+))?( (.*))?,) {
 			my ($num, $denom, $message)= ($1, $3, $5);
 			$message= '' unless defined $message;
 			$message =~ s/^- //; # "- " is optional syntax
-			$status->{message}= $message;
-			$status->{progress}= $num+0;
+			$state->{message}= $message;
+			$state->{progress}= $num+0;
 			if (defined $denom) {
-				$status->{current}= $num;
-				$status->{total}= $denom;
-				$status->{progress} /= $denom;
+				$state->{current}= $num;
+				$state->{total}= $denom;
+				$state->{progress} /= $denom;
 			}
-			if ($status->{contribution}) {
+			if ($state->{contribution}) {
 				# Need to apply progress to parent nodes at end
-				$parent_cleanup{$status_parent[$_]}= [ $_, $status_parent[$_] ]
-					for 0..$#status_parent;
+				$parent_cleanup{$state_parent[$_]}= [ $_, $state_parent[$_] ]
+					for 0..$#state_parent;
 			}
 		}
 		elsif ($remainder =~ m,^\(([\d.]+)\) (.*),) {
 			my ($contribution, $title)= ($1, $2);
 			$title =~ s/^- //; # "- " is optional syntax
-			$status->{title}= $title;
-			$status->{contribution}= $contribution+0;
+			$state->{title}= $title;
+			$state->{contribution}= $contribution+0;
 		}
 		elsif ($remainder =~ /^\{/) {
 			my $data= JSON->new->decode($remainder);
-			$status->{data}= !defined $self->on_data? $data
+			$state->{data}= !defined $self->on_data? $data
 				: $self->on_data->($self, $step_id, $data);
 		}
 		else {
@@ -160,44 +160,44 @@ sub parse {
 	$self->input_pos($pos);
 	# apply child progress contributions to parent nodes
 	for (sort { $b->[0] <=> $a->[0] } values %parent_cleanup) {
-		my $status= $_->[1];
-		$status->{progress}= 0;
-		for (values %{$status->{step}}) {
-			$status->{progress} += $_->{progress} * $_->{contribution}
+		my $state= $_->[1];
+		$state->{progress}= 0;
+		for (values %{$state->{step}}) {
+			$state->{progress} += $_->{progress} * $_->{contribution}
 				if $_->{progress} && $_->{contribution};
 		}
 	}
-	return $self->status;
+	return $self->state;
 }
 
-=head2 step_status
+=head2 step_state
 
-  my $status= $parser->step_status($step_id, $create_if_missing);
-  my $status= $parser->step_status($step_id, $create_if_missing, \@path_out);
+  my $state= $parser->step_state($step_id, $create_if_missing);
+  my $state= $parser->step_state($step_id, $create_if_missing, \@path_out);
 
-Convenience method to traverse L</status> to get the data for a step.
+Convenience method to traverse L</state> to get the data for a step.
 If the second paramter is false, this returns undef if the step is not yet
-defined.  Else it creates a new status node, with C<idx> initialized.
+defined.  Else it creates a new state node, with C<idx> initialized.
 
 If you pass the third parameter C<@path_out> it will receive a list of the
-parent nodes of the returned status node.
+parent nodes of the returned state node.
 
 =cut
 
-sub step_status {
+sub step_state {
 	my ($self, $step_id, $create, $path)= @_;
-	my $status= $self->status;
+	my $state= $self->state;
 	if (defined $step_id and length $step_id) {
 		for (split /\./, $step_id) {
-			push @$path, $status if $path;
-			$status= ($status->{step}{$_} or do {
+			push @$path, $state if $path;
+			$state= ($state->{step}{$_} or do {
 				return undef unless $create;
-				my $idx= scalar(keys %{$status->{step}});
-				$status->{step}{$_}= { idx => $idx };
+				my $idx= scalar(keys %{$state->{step}});
+				$state->{step}{$_}= { idx => $idx };
 			});
 		}
 	}
-	$status;
+	$state;
 }
 
 1;

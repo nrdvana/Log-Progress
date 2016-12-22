@@ -51,14 +51,14 @@ while (($parser->parse->{progress}||0) < 1) {
 		last;
 	};
 	note sprintf(" %3d%% %3d%%, parent waiting",
-		($parser->status->{step}{a}{progress}||0)*100,
-		($parser->status->{step}{b}{progress}||0)*100);
+		($parser->state->{step}{a}{progress}||0)*100,
+		($parser->state->{step}{b}{progress}||0)*100);
 	sleep .3;
 }
 waitpid $writer_a_pid, 0 or die "waitpid: $!";
 waitpid $writer_b_pid, 0 or die "waitpid: $!";
 
-is( $parser->status->{progress}, 1, 'reached 100%' )
-	or diag explain $parser->status;
+is( $parser->state->{progress}, 1, 'reached 100%' )
+	or diag explain $parser->state;
 
 done_testing;

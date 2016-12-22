@@ -70,8 +70,8 @@ for (@tests) {
 		$parser= Log::Progress::Parser->new(input => $input);
 	}
 	$parser->parse;
-	is_deeply( $parser->status, $state, $name )
-		or diag explain $parser->status;
+	is_deeply( $parser->state, $state, $name )
+		or diag explain $parser->state;
 	# check that we didn't clobber $_
 	is( $_->[3], $state, '$_ intact' );
 }

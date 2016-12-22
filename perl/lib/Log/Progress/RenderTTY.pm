@@ -34,7 +34,7 @@ command on your system for the progress bar to display correctly.
 
 =head2 parser
 
-Reference to a L<Log::Progress::Parser>, whose L<Log::Progress::Parser/status> should
+Reference to a L<Log::Progress::Parser>, whose L<Log::Progress::Parser/state> should
 be rendered.
 
 =head2 tty_metrics
@@ -150,7 +150,7 @@ sub format {
 
   $renderer->render
 
-Call C<< ->parser->parse >>, format the parser's status as text, then print
+Call C<< ->parser->parse >>, format the parser's state as text, then print
 terminal escape sequences to display the text with minimal overwriting.
 
 This method goes to some additional effort to make sure the scrollback buffer
