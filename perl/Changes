@@ -1,4 +1,4 @@
-Version 0.02
+Version 0.03
   Add RenderTTY module to display progress on a terminal.
   Fixed a bug in Parser that clobbered $_.
   Renamed a few attributes in Parser.  Not backward compatible,

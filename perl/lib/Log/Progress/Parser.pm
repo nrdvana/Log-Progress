@@ -4,13 +4,13 @@ use JSON;
 
 # ABSTRACT: Parse progress data from a file
 
-our $VERSION= '0.02';
+our $VERSION= '0.03';
 
 =head1 DESCRIPTION
 
-This module parses progress messages (See
-L<the protocol description|http://github.com/nrdvana/Log-Progress/blob/master/README.md>
-for details) from a file handle or string.
+This module parses
+L<progress messages|http://github.com/nrdvana/Log-Progress/blob/master/README.md>
+from a file handle or string.
 Repeated calls to the L</parse> method will continue parsing the file
 where it left off, making it relatively efficient to repeatedly call
 L</parse> on a live log file.
@@ -76,7 +76,8 @@ For example, you might want to combine all the data instead of overwriting it:
   my $parser= Log::Progress::Parser->new(
     on_data => sub {
       my ($parser, $step_id, $data)= @_;
-      return Hash::Merge::merge( $parser->step_state($step_id), $data );
+      my $prev_data= $parser->step_state($step_id)->{data} || {};
+      return Hash::Merge::merge( $prev_data, $data );
     }
   );
 
@@ -85,6 +86,7 @@ For example, you might want to combine all the data instead of overwriting it:
 has input     => ( is => 'rw' );
 has input_pos => ( is => 'rw' );
 has state     => ( is => 'rw', default => sub { {} } );
+*status= *state;  # alias, since I changed the API
 has on_data   => ( is => 'rw' );
 
 =head1 METHODS

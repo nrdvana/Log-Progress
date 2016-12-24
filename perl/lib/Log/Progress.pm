@@ -4,15 +4,15 @@ use Carp;
 use IO::Handle; # for 'autoflush'
 use JSON;
 
-our $VERSION= '0.02';
+our $VERSION= '0.03';
 
 # ABSTRACT: Conveniently write progress messages to logger or file handle
 
 =head1 DESCRIPTION
 
 This module assists with writing
-L<Log::Progress protocol|http://github.com/nrdvana/Log-Progress/blob/master/README.md>
-messages to your log file, which can then be parsed with L<Log::Progress::Parser>.
+L<progress messages|http://github.com/nrdvana/Log-Progress/blob/master/README.md>
+to your log file, which can then be parsed with L<Log::Progress::Parser>.
 It can write to file handles, log objects (like L<Log::Any>),
 or custom coderefs.
 
@@ -66,25 +66,25 @@ decimal point.  The default precision is 2.  This default corresponds with a
 default L</squelch> of 0.01, so that calls to C<< ->progress >> with less
 than 1% change from the previous call are suppressed.
 
-If you set precision but not squelch, the second will use a default to match
-the one you specified.  For example, setting a precision of 5 results in a
-default squelch of .00001, or a default squelch of 350 results in a precision
-of 3.
+If you set only one of C<precision> or C<squelch>, the other will default to
+something appropriate.  For example, setting C<precision> to C<5> results in
+a C<squelch> of C<.00001>.  Likewise a squelch of C<1/60> gives a precision
+of C<2>.
 
-Once set, precision will not receive a default value from changes to squelch.
+Once set, C<precision> will not receive a default value from changes to C<squelch>.
 (but you can un-define it to restore that behavior)
 
 =head2 squelch
 
 You can prevent spamming your log file with tiny progress updates using
-"squelch", which limits progress messages to one per some fraction of overall
-progress.  For example, the default squelch of .01 will only emit at most 101
-progress messages.  (unless you start reporting negative progress)
+C<squelch>, which limits progress messages to one per some fraction of overall
+progress.  For example, the default C<squelch> of C<.01> will only emit at most
+C<101> progress messages.  (assuming your progress is non-decreasing)
 
-If you set squelch but not precision, the second will use a sensible default.
+If you set C<squelch> but not C<precision>, the second will use a sensible default.
 See example in L</precision>
 
-Once set, squelch will not receive a default value from changing precision.
+Once set, C<squelch> will not receive a default value from changing C<precision>.
 (but you can un-define it to restore that behavior)
 
 =head2 step_id

@@ -9,7 +9,7 @@ use Scalar::Util;
 
 # ABSTRACT: Render progress state on a terminal
 
-our $VERSION= '0.02';
+our $VERSION= '0.03';
 
 =head1 SYNOPSIS
 
@@ -34,7 +34,7 @@ command on your system for the progress bar to display correctly.
 
 =head2 parser
 
-Reference to a L<Log::Progress::Parser>, whose L<Log::Progress::Parser/state> should
+Reference to a L<Log::Progress::Parser>, whose L<state|Log::Progress::Parser/state> should
 be rendered.
 
 =head2 tty_metrics

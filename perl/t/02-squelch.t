@@ -14,6 +14,8 @@ for (
 	[ .5 => 1 ],
 	[ .05 => 2 ],
 	[ .01 => 2 ],
+	[ 1/350 => 3 ],
+	[ 1/60 => 2 ],
 ) {
 	my $p= Log::Progress->new(squelch => $_->[0]);
 	is( $p->precision, $_->[1], 'precision for squelch '.$_->[0] );
