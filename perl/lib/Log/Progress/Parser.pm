@@ -27,7 +27,9 @@ A practical application:
   $|= 1;
   while (1) {
     $parser->parse;
-    printf "\r%3d%%  [%-40s] ", $parser->state->{progress}*100, "#" x int($parser->state->{progress}*40);
+    printf "\r%3d%%  [%-40s] ",
+      $parser->state->{progress}*100,
+      "#" x int($parser->state->{progress}*40);
     last if $parser->state->{progress} >= 1;
     sleep 1;
   }

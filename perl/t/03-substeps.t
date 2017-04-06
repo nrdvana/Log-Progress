@@ -11,8 +11,8 @@ sub append_out { $out .= (shift) . "\n" }
 my $p= Log::Progress->new(squelch => .2, to => \&append_out);
 my $p1= $p->substep("foo", .3, "Substep 1");
 my $p2= $p->substep("bar", .7, "Substep 2");
-$p1->progress($_/10) for (0..10);
-$p2->progress($_/100) for (0..100);
+$p1->at($_/10) for (0..10);
+$p2->at($_/100) for (0..100);
 
 is( $out, <<'END', 'output' );
 progress: foo (0.3) Substep 1

@@ -21,7 +21,7 @@ my ($writer_a_pid, $writer_b_pid);
 		my $p= Log::Progress->new(to => $fh);
 		for (my $i= 1; $i <= 123; $i++) {
 			sleep .01;
-			$p->progress($i, 123);
+			$p->at($i, 123);
 		}
 		exit 0;
 	}
@@ -34,7 +34,7 @@ my ($writer_a_pid, $writer_b_pid);
 		my $p= Log::Progress->new(to => $fh);
 		for (my $i= 1; $i <= 12; $i++) {
 			sleep .18;
-			$p->progress($i/12, undef, "$i of 12");
+			$p->at($i/12, undef, "$i of 12");
 		}
 		exit 0;
 	}

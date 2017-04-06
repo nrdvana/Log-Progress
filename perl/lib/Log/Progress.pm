@@ -20,13 +20,21 @@ Note that this module enables autoflush if you give it a file handle.
 
 =head1 SYNOPSIS
 
-  my $p= Log::Progress->new(to => \*STDERR); # The default
-  $p->squelch(.1); # only emit messages every 10%
+  my $progress= Log::Progress->new(to => \*STDERR); # The default
+  $progress->squelch(.1); # only emit messages every 10%
   my $max= 1000;
+  $progress->at(0, $max);
   for (my $i= 1; $i <= $max; $i++) {
     # do the thing
     ...;
-    $p->progress($i, $max);
+    $progress->at($i);
+  }
+  
+  # or, if you don't have a loop variable:
+  $progress->at(0, scalar @things);
+  for (@things) {
+    ...;
+    $progress->inc;  # "++" would be fun, but L<overload> causes object cloning
   }
 
 =head1 ATTRIBUTES
@@ -63,7 +71,7 @@ and should probably be a boolean to match behavior of C<IO::Handle::print>.
 
 The progress number is written as text, with L</precision> digits after the
 decimal point.  The default precision is 2.  This default corresponds with a
-default L</squelch> of 0.01, so that calls to C<< ->progress >> with less
+default L</squelch> of 0.01, so that calls to C<< ->at >> with less
 than 1% change from the previous call are suppressed.
 
 If you set only one of C<precision> or C<squelch>, the other will default to
@@ -97,6 +105,16 @@ programs that perform simple progress reporting can be nested as child
 processes of a larger job without having to specifically plan for that ability
 in the child process.
 
+=head2 current
+
+The current progress fraction numerator.  Used by L</inc>.
+Setting this attribute directly bypasses the printing of progress.
+
+=head2 total
+
+The progress fraction denominator.  Used by L</inc> and L</at>.
+Setting this attribute directly bypasses the printing of progress.
+
 =cut
 
 has to         => ( is => 'rw', isa => \&_assert_valid_output, default => sub { \*STDERR },
@@ -113,6 +131,9 @@ sub precision  {
 }
 has step_id    => ( is => 'rw', default => sub { $ENV{PROGRESS_STEP_ID} },
                     trigger => sub { delete $_[0]{_writer} } );
+
+has current    => ( is => 'rw' );
+has total      => ( is => 'rw' );
 
 has _writer    => ( is => 'lazy' );
 has _squelch   => ( is => 'rw', init_arg => 'squelch' );
@@ -166,35 +187,72 @@ sub _build__writer {
 
 =head1 METHODS
 
-=head2 progress
+=head2 at
 
-  $p->progress( $current, $maximum );
-  $p->progress( $current, $maximum, $message );
+  $p->at( $current, $total );
+  $p->at( $current, $total, $message );
 
 Report progress (but only if the progress since the last output is greater
 than L<squelch>).  Message is optional.
 
-If C<$maximum> is undefined or exactly '1', then this will print C<$current>
-as a formatted decimal.  Otherwise it prints the fraction of C<$current>/C<$maximum>.
+If C<$total> is undefined, it uses any previous value of C<$total>, else C<1>.
+If the total is exactly '1', then this will print C<$current>
+as a formatted decimal.  Otherwise it prints the fraction of C<$current>/C<$total>.
 When using fractional form, the decimal precision is omitted if C<$current> is
 a whole number.
 
+This function stores C<$current> and C<$total> for later calls.
+
+=head2 progress
+
+Backward-compatible name for L</at>, but doesn't preserve previous C<$total>.
+
 =cut
 
-sub progress {
-	my ($self, $current, $maximum, $message)= @_;
-	$maximum= 1 unless defined $maximum;
-	my $progress= $current / $maximum;
+sub at {
+	my ($self, $current, $total, $message)= @_;
+	if (defined $total) {
+		$self->total($total);
+	} else {
+		$total= $self->total;
+		$total= 1 unless defined $total;
+	}
+	$self->current($current);
+	my $progress= $total? $current / $total : 0;
 	my $sq= $self->squelch;
 	my $formatted= sprintf("%.*f", $self->precision, int($progress/$sq + .0000000001)*$sq);
 	return if defined $self->_last_progress
 	      and abs($formatted - $self->_last_progress)+.0000000001 < $sq;
 	$self->_last_progress($formatted);
-	if ($maximum != 1) {
-		$formatted= (int($current) == $current)? "$current/$maximum"
-			: sprintf("%.*f/%d", $self->precision, $current, $maximum);
+	if ($total != 1) {
+		$formatted= (int($current) == $current)? "$current/$total"
+			: sprintf("%.*f/%d", $self->precision, $current, $total);
 	}
 	$self->_writer->($formatted . ($message? " - $message":''));
+}
+
+# backward compatibility with version <= 0.03
+sub progress {
+	my ($self, $current, $total, $message)= @_;
+	$total= 1 unless defined $total;
+	$self->at($current, $total, $message);
+}
+
+=head2 inc
+
+  $progress->inc;               # increment by 1
+  $progress->inc(5)             # increment by 5
+  $progress->inc(1, $message);  # increment by 1 and include a message
+
+Increment the numerator of the progress, and print if it is greater than
+L</squelch>.
+
+=cut
+
+sub inc {
+	my ($self, $offset, $message)= @_;
+	$offset= 1 unless defined $offset;
+	$self->at(($self->current || 0) + $offset, undef, $message);
 }
 
 =head2 data

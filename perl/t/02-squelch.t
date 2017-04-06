@@ -30,34 +30,34 @@ for (
 }
 
 my $p= Log::Progress->new(squelch => 1, to => \&append_out);
-$p->progress($_/1000) for 0..1000;
+$p->at($_/1000) for 0..1000;
 is( $out, "progress: 0\nprogress: 1\n", 'output' );
 
 $out= '';
 $p= Log::Progress->new(squelch => .1, to => \&append_out);
-$p->progress($_) for (.01, .02, .03, .04, .05, .06, .07, .08, .09, .09999);
-$p->progress($_) for (.89999, .949999, .95, .9999);
+$p->at($_) for (.01, .02, .03, .04, .05, .06, .07, .08, .09, .09999);
+$p->at($_) for (.89999, .949999, .95, .9999);
 is( $out, "progress: 0.0\nprogress: 0.8\nprogress: 0.9\n", 'output' );
 
 $out= '';
 $p= Log::Progress->new(squelch => .05, to => \&append_out);
-$p->progress($_) for (.01, .02, .03, .04);
+$p->at($_) for (.01, .02, .03, .04);
 is( $out, "progress: 0.00\n", 'output' );
 $out= '';
-$p->progress(.05);
+$p->at(.05);
 is( $out, "progress: 0.05\n", 'output' );
-$p->progress($_) for (.05, .06, .07, .08, .09, .0999);
+$p->at($_) for (.05, .06, .07, .08, .09, .0999);
 is( $out, "progress: 0.05\n", 'output' );
 
 $out= '';
 $p= Log::Progress->new(precision => 0, to => \&append_out);
-$p->progress(.05);
+$p->at(.05);
 is( $out, "progress: 0\n", 'output' );
-$p->progress(.9);
+$p->at(.9);
 is( $out, "progress: 0\n", 'output' );
-$p->progress(.9999999);
+$p->at(.9999999);
 is( $out, "progress: 0\n", 'output' );
-$p->progress(1);
+$p->at(1);
 is( $out, "progress: 0\nprogress: 1\n", 'output' );
 
 done_testing;
