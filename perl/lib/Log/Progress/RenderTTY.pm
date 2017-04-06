@@ -9,8 +9,6 @@ use Scalar::Util;
 
 # ABSTRACT: Render progress state on a terminal
 
-our $VERSION= '0.03';
-
 =head1 SYNOPSIS
 
   use Log::Progress::Parser;

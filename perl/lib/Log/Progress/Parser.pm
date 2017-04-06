@@ -4,8 +4,6 @@ use JSON;
 
 # ABSTRACT: Parse progress data from a file
 
-our $VERSION= '0.03';
-
 =head1 DESCRIPTION
 
 This module parses
