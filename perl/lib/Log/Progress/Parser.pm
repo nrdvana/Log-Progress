@@ -1,4 +1,5 @@
 package Log::Progress::Parser;
+
 use Moo 2;
 use JSON;
 

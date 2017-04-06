@@ -1,4 +1,5 @@
 package Log::Progress;
+
 use Moo 2;
 use Carp;
 use IO::Handle; # for 'autoflush'

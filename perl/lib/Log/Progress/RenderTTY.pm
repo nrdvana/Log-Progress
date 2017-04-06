@@ -1,4 +1,5 @@
 package Log::Progress::RenderTTY;
+
 use Moo 2;
 use Carp;
 use Try::Tiny;
