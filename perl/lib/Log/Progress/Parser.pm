@@ -68,6 +68,11 @@ Substeps may additionally have the keys:
     title        => $name_of_this_step,
     contribution => $percent_of_parent_task, # can be undef
 
+=head2 sticky_message
+
+Defaults to false.  If set to true, then progress lines lacking a message will
+not clear the message of a previous progress line.
+
 =head2 on_data
 
 Optional coderef to handle JSON data discovered on input.  The return value
@@ -89,6 +94,7 @@ has input     => ( is => 'rw' );
 has input_pos => ( is => 'rw' );
 has state     => ( is => 'rw', default => sub { {} } );
 *status= *state;  # alias, since I changed the API
+has sticky_message => ( is => 'rw' );
 has on_data   => ( is => 'rw' );
 
 =head1 METHODS
@@ -130,9 +136,12 @@ sub parse {
 		# First, check for progress number followed by optional message
 		if ($remainder =~ m,^([\d.]+)(/(\d+))?( (.*))?,) {
 			my ($num, $denom, $message)= ($1, $3, $5);
-			$message= '' unless defined $message;
-			$message =~ s/^- //; # "- " is optional syntax
-			$state->{message}= $message;
+			if (defined $message) {
+				$message =~ s/^- //; # "- " is optional syntax
+				$state->{message}= $message;
+			} else {
+				$state->{message}= '' if !defined $state->{message} or !$self->sticky_message;
+			}
 			$state->{progress}= $num+0;
 			if (defined $denom) {
 				$state->{current}= $num;

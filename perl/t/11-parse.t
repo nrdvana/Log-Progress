@@ -76,4 +76,46 @@ for (@tests) {
 	is( $_->[3], $state, '$_ intact' );
 }
 
+subtest sticky_message => sub {
+	my $parser= Log::Progress::Parser->new(input => "progress: 1/5\n");
+	$parser->parse;
+	is( $parser->state->{message}, '', 'no sticky; start blank' );
+	
+	$parser->input($parser->input . "progress: 2/5 - Foo\n");
+	$parser->parse;
+	is( $parser->state->{message}, 'Foo', 'find message' );
+	
+	$parser->input($parser->input . "progress: 3/5\n");
+	$parser->parse;
+	is( $parser->state->{message}, '', 'absent message clears it' );
+	
+	#---------------------
+	
+	$parser= Log::Progress::Parser->new(sticky_message => 1, input => "progress: 1/5\n");
+	$parser->parse;
+	is( $parser->state->{message}, '', 'sticky; start blank' );
+	
+	$parser->input($parser->input . "progress: 2/5 - Foo\n");
+	$parser->parse;
+	is( $parser->state->{message}, 'Foo', 'find message' );
+	
+	$parser->input($parser->input . "progress: 3/5\n");
+	$parser->parse;
+	is( $parser->state->{message}, 'Foo', 'absent message doesnt clear it' );
+	
+	#--------------------
+	
+	$parser= Log::Progress::Parser->new(sticky_message => 1, input => "progress: 1/5\n");
+	$parser->parse;
+	is( $parser->state->{message}, '', 'start blank' );
+	
+	$parser->input($parser->input . "progress: 2/5 - Foo\n");
+	$parser->parse;
+	is( $parser->state->{message}, 'Foo', 'find message' );
+	
+	$parser->input($parser->input . "progress: 3/5 - \n");
+	$parser->parse;
+	is( $parser->state->{message}, '', 'allow logger to forcibly clear message' );
+};
+
 done_testing;
