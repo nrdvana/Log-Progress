@@ -67,6 +67,8 @@ Substeps may additionally have the keys:
     title        => $name_of_this_step,
     contribution => $percent_of_parent_task, # can be undef
 
+=for Pod::Coverage status
+
 =head2 sticky_message
 
 Defaults to false.  If set to true, then progress lines lacking a message will
