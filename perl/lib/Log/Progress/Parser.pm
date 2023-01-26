@@ -145,8 +145,9 @@ sub parse {
 			if (defined $denom) {
 				$state->{current}= $num;
 				$state->{total}= $denom;
-				$state->{progress} /= $denom;
+				$state->{progress} /= $denom if $denom;
 			}
+			$state->{progress}= 1 if $state->{progress} > 1;
 			if ($state->{contribution}) {
 				# Need to apply progress to parent nodes at end
 				$parent_cleanup{$state_parent[$_]}= [ $_, $state_parent[$_] ]
